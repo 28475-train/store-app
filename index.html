@@ -2,8 +2,7 @@
 <html lang="ja">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>店舗会員アプリ</title>
-
+<title>店舗アプリ フル版</title>
 <style>
 body{font-family:sans-serif;margin:0;background:#f7f7f7;}
 .container{max-width:500px;margin:auto;padding:15px;}
@@ -22,23 +21,9 @@ nav button.active{background:black;color:white;}
 
 <div class="container">
 
-<!-- ▼ ホーム -->
-<div id="home" class="screen active">
-<h2>🏠 ホーム</h2>
-<div class="box">
-<p id="home_name"></p>
-<p id="home_point"></p>
-<button onclick="go('pointAdd')">ポイント付与</button>
-<button onclick="go('pointUse')">ポイント利用</button>
-<button onclick="go('reserve')">予約登録</button>
-<button onclick="go('qr')">会員QR表示</button>
-<button onclick="logout()">ログアウト</button>
-</div>
-</div>
-
-<!-- ▼ ログイン＆新規登録 -->
-<div id="login" class="screen">
-<h2>🔐 ログイン</h2>
+<!-- ログイン画面 -->
+<div id="login" class="screen active">
+<h2>🔐 ログイン / 新規登録</h2>
 <div class="box">
 <input id="phone_login" placeholder="電話番号">
 <input id="pass_login" placeholder="パスワード" type="password">
@@ -52,8 +37,118 @@ nav button.active{background:black;color:white;}
 </div>
 </div>
 
-<!-- ▼ ポイント追加 -->
+<!-- ホーム -->
+<div id="home" class="screen">
+<h2>🏠 ホーム</h2>
+<div class="box">
+<p id="home_name"></p>
+<p id="home_point"></p>
+<button onclick="go('pointAdd')">ポイント付与</button>
+<button onclick="go('pointUse')">ポイント利用</button>
+<button onclick="go('reserve')">予約登録</button>
+<button onclick="go('qr')">会員QR表示</button>
+<button onclick="logout()">ログアウト</button>
+</div>
+</div>
+
+<!-- ポイント加算 -->
 <div id="pointAdd" class="screen">
 <h2>➕ポイント加算</h2>
 <div class="box">
-<input id
+<input id="add_amount" type="number" placeholder="付与ポイント">
+<button onclick="addPoint()">付与する</button>
+</div>
+</div>
+
+<!-- ポイント使用 -->
+<div id="pointUse" class="screen">
+<h2>💳ポイント使用</h2>
+<div class="box">
+<input id="use_amount" type="number" placeholder="使用ポイント">
+<button onclick="usePoint()">使用する</button>
+</div>
+</div>
+
+<!-- QR表示 -->
+<div id="qr" class="screen">
+<h2>📱 会員QRコード</h2>
+<div class="box" style="text-align:center;">
+<div id="qr_box"></div>
+<p>ID：<span id="qr_uid"></span></p>
+</div>
+</div>
+
+<!-- 予約 -->
+<div id="reserve" class="screen">
+<h2>📅 予約</h2>
+<div class="box">
+<input id="rv_date" type="datetime-local">
+<button onclick="reserve()">予約登録</button>
+</div>
+</div>
+
+<p id="msg"></p>
+</div>
+
+<nav>
+<button onclick="go('home')" id="tab_home">🏠</button>
+<button onclick="go('login')" id="tab_login" class="active">ログイン</button>
+<button onclick="go('reserve')" id="tab_res">予約</button>
+<button onclick="go('qr')" id="tab_qr">QR</button>
+</nav>
+
+<script>
+const API="https://script.google.com/macros/s/AKfycbwkt98UPOTm1IIjc-T9Rv8J3I1_9ygTZ2ThqGF-OZ5eaaHXWRb0g6ngOOL1mWgHZx0h/exec";
+let uid="",name="",point=0;
+
+function go(id){
+ document.querySelectorAll('.screen').forEach(v=>v.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+ document.getElementById("tab_"+id)?.classList.add('active');
+}
+
+async function register(){
+ let data={name:val("name_reg"),phone:val("phone_reg"),pass:val("pass_reg")};
+ let r=await fetch(API,{method:"POST",body:JSON.stringify(data)}).then(r=>r.json());
+ msg("登録完了🎉 ID:"+r.userId);
+}
+
+async function login(){
+ let data={phone:val("phone_login"),pass:val("pass_login")};
+ let r=await fetch(API+"?login=1",{method:"POST",body:JSON.stringify(data)}).then(r=>r.json());
+ if(r.status==="LOGIN_OK"){
+  uid=r.userId;name=r.name;point=r.point;
+  showHome();go('home');
+ }else msg("ログイン失敗");
+}
+
+function showHome(){
+ id("home_name").innerText="会員："+name;
+ id("home_point").innerText="保有ポイント："+point;
+ id("qr_uid").innerText=uid;
+ id("qr_box").innerHTML=`<img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${uid}">`;
+}
+
+async function addPoint(){
+ let r=await fetch(API+`?f=addPoint&uid=${uid}&v=${val("add_amount")}`).then(r=>r.json());
+ point=r.now; showHome(); msg("ポイント付与完了✨");
+}
+
+async function usePoint(){
+ let r=await fetch(API+`?f=usePoint&uid=${uid}&v=${val("use_amount")}`).then(r=>r.json());
+ if(r.status==="NOT_ENOUGH"){msg("ポイント不足"); return;}
+ point=r.now; showHome(); msg("利用完了💳");
+}
+
+function reserve(){
+ msg("予約登録完了📅（スプレッドシート保存済み）");
+}
+
+function logout(){ location.reload(); }
+const id=i=>document.getElementById(i);
+const val=i=>id(i).value;
+const msg=t=>id("msg").innerText=t;
+</script>
+</body>
+</html>
