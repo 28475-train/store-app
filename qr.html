@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>会員QRコード</title>
+<style>
+body{
+  font-family:'Helvetica',sans-serif;
+  margin:0;
+  padding:0;
+  background:#e6f2ff;
+  color:#333;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:100vh;
+}
+.container{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+  text-align:center;
+  max-width:350px;
+  width:90%;
+}
+h2{margin-top:0;color:#0099ff;}
+button{
+  padding:12px;
+  margin-top:15px;
+  width:100%;
+  background:#0099ff;
+  color:white;
+  border:none;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
+}
+button:hover{background:#007acc;}
+#qr_box img{
+  width:200px;
+  height:200px;
+  margin-top:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+<h2>📱 会員QRコード</h2>
+<p id="user_name"></p>
+<p id="user_point"></p>
+<div id="qr_box"></div>
+<button onclick="logout()">ログアウト</button>
+<p id="msg" style="margin-top:10px;color:red;font-weight:bold;"></p>
+</div>
+
+<script>
+const API="https://script.google.com/macros/s/AKfycby3s4ajbk3PTfrrhP-klJ3ERAdSiIIiXOXjFoOr4YO8DzP0Veq1mghE4BgGfA1lwlT4/exec";
+let uid=localStorage.getItem("uid") || "";
+let name=localStorage.getItem("name") || "";
+let point=localStorage.getItem("point") || 0;
+
+function showQR(){
+  if(!uid){ id("msg").innerText="ログイン情報がありません。"; return;}
+  id("user_name").innerText="会員："+name;
+  id("user_point").innerText="保有ポイント："+point;
+  id("qr_box").innerHTML=`<img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${uid}" alt="QRコード">`;
+}
+
+function logout(){
+  localStorage.clear();
+  location.href="index.html"; // ログイン画面に戻す
+}
+
+const id=i=>document.getElementById(i);
+
+showQR();
+</script>
+</body>
+</html>
