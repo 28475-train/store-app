@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>店舗アプリ（QR付与対応）</title>
+<title>顧客用店舗アプリ</title>
 <style>
 body{font-family:'Helvetica',sans-serif;margin:0;background:#e6f2ff;color:#333;}
 .container{max-width:500px;margin:auto;padding:15px;}
@@ -17,10 +17,12 @@ nav button{flex:1;border:none;border-radius:0;margin:0;padding:15px;background:#
 nav button.active{background:#0099ff;color:white;font-weight:bold;}
 .box{background:white;padding:15px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1);margin-top:15px;text-align:center;}
 .logo{display:block;margin:auto;width:120px;}
-#qr_box img{width:200px;height:200px;margin-top:10px;}
+#barcode svg{width:100%;height:80px;}
 </style>
 </head>
 <body>
+
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
 
 <div class="container">
 <img src="https://dummyimage.com/120x60/0099ff/ffffff&text=LOGO" class="logo" alt="店舗ロゴ">
@@ -47,20 +49,20 @@ nav button.active{background:#0099ff;color:white;font-weight:bold;}
 <div class="box">
 <p id="home_name"></p>
 <p id="home_point"></p>
-<button onclick="go('qr')">📱 自分のQR表示</button>
-<button onclick="go('reserve')">📅予約登録</button>
+<button onclick="go('barcode')">📲 バーコード表示</button>
+<button onclick="go('reserve')">📅 予約登録</button>
 <button onclick="logout()">🚪ログアウト</button>
 </div>
 </div>
 
-<!-- QR表示 & ポイント付与 -->
-<div id="qr" class="screen">
-<h2>📱 会員QRコード</h2>
+<!-- バーコード表示 -->
+<div id="barcode" class="screen">
+<h2>📲 会員バーコード</h2>
 <div class="box">
 <p id="user_name"></p>
 <p id="user_point"></p>
-<div id="qr_box"></div>
-<p>※このQRを店側端末で読み取るとポイントが自動加算されます。</p>
+<div id="barcode"></div>
+<p>※バーコードを店側端末で読み取るとポイントが自動加算されます。</p>
 <button onclick="go('home')">🏠 ホームに戻る</button>
 </div>
 </div>
@@ -81,12 +83,19 @@ nav button.active{background:#0099ff;color:white;font-weight:bold;}
 <button onclick="go('home')" id="tab_home">🏠</button>
 <button onclick="go('login')" id="tab_login" class="active">🔑</button>
 <button onclick="go('reserve')" id="tab_res">📅</button>
-<button onclick="go('qr')" id="tab_qr">📱</button>
+<button onclick="go('barcode')" id="tab_barcode">📲</button>
 </nav>
 
 <script>
 const API="https://script.google.com/macros/s/AKfycby3s4ajbk3PTfrrhP-klJ3ERAdSiIIiXOXjFoOr4YO8DzP0Veq1mghE4BgGfA1lwlT4/exec";
 let uid="",name="",point=0;
+
+window.onload=function(){
+  uid = localStorage.getItem("uid");
+  name = localStorage.getItem("name");
+  point = localStorage.getItem("point");
+  if(uid){ showBarcode(); go('home'); }
+};
 
 function go(id){
  document.querySelectorAll('.screen').forEach(v=>v.classList.remove('active'));
@@ -105,39 +114,26 @@ async function login(){
  let data={phone:val("phone_login"),pass:val("pass_login"),login:true};
  let r=await fetch(API,{method:"POST",body:JSON.stringify(data)}).then(r=>r.json());
  if(r.status==="LOGIN_OK"){
-  uid=r.userId;name=r.name;point=r.point;
-  localStorage.setItem("uid", uid);
-  localStorage.setItem("name", name);
-  localStorage.setItem("point", point);
-  showQR(); go('home');
+  uid=r.userId; name=r.name; point=r.point;
+  localStorage.setItem("uid",uid); localStorage.setItem("name",name); localStorage.setItem("point",point);
+  showBarcode(); go('home');
  }else msg("ログイン失敗");
 }
 
-function showQR(){
+function showBarcode(){
  if(!uid){ id("msg").innerText="ログインしてください"; return;}
  id("user_name").innerText="会員："+name;
  id("user_point").innerText="保有ポイント："+point;
- id("qr_uid").innerText=uid;
- id("qr_box").innerHTML=`<img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${uid}" alt="QRコード">`;
-}
-
-async function addPoint(uidAdd, amount){
- // 店側端末で読み取ったQRを元にポイント加算
- let r = await fetch(API+`?f=addPoint&uid=${uidAdd}&v=${amount}`).then(r=>r.json());
- return r.now;
+ JsBarcode("#barcode", uid, {format:"CODE128",width:2,height:50,displayValue:true});
 }
 
 function reserve(){ msg("予約登録完了📅（スプレッドシート保存済み）"); }
-
-function logout(){ 
-  localStorage.clear();
-  location.reload(); 
-}
+function logout(){ localStorage.clear(); location.reload(); }
 
 const id=i=>document.getElementById(i);
 const val=i=>id(i).value;
 const msg=t=>id("msg").innerText=t;
-
 </script>
 </body>
 </html>
+
