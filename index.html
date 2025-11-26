@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>店舗アプリ | ログイン＆登録</title>
+
+<style>
+body { font-family: sans-serif; margin: 20px; }
+.box { max-width: 350px; margin:auto; padding: 20px; border-radius:10px;
+       box-shadow:0 0 10px #ccc; }
+input,button {
+    width:100%; padding:10px; margin-top:10px; font-size:16px;
+    border-radius:6px; border:1px solid #bbb;
+}
+button{background:black;color:white;}
+h2{text-align:center;}
+</style>
+</head>
+<body>
+
+<div class="box">
+
+<h2>🔐 ログイン</h2>
+<input id="phone_login" placeholder="電話番号">
+<input id="pass_login"  placeholder="パスワード" type="password">
+<button onclick="login()">ログイン</button>
+
+<hr>
+
+<h2>📝 新規登録</h2>
+<input id="name_reg"  placeholder="名前">
+<input id="phone_reg" placeholder="電話番号">
+<input id="pass_reg"  placeholder="パスワード" type="password">
+<button onclick="register()">登録</button>
+
+<p id="msg"></p>
+
+</div>
+
+<script>
+const API = "https://script.google.com/macros/s/AKfycbwkt98UPOTm1IIjc-T9Rv8J3I1_9ygTZ2ThqGF-OZ5eaaHXWRb0g6ngOOL1mWgHZx0h/exec";
+
+async function register(){
+ let data = {
+  name:document.getElementById("name_reg").value,
+  phone:document.getElementById("phone_reg").value,
+  pass:document.getElementById("pass_reg").value
+ };
+ let res = await fetch(API,{
+   method:"POST",
+   body:JSON.stringify(data)
+ });
+ let r = await res.json();
+ document.getElementById("msg").innerText = "登録完了！ 会員ID→ " + r.userId;
+}
+
+async function login(){
+ let data = {
+  phone:document.getElementById("phone_login").value,
+  pass: document.getElementById("pass_login").value
+ };
+
+ let res = await fetch(API+"?login=1",{
+   method:"POST",
+   body:JSON.stringify(data)
+ });
+
+ document.getElementById("msg").innerText="ログイン処理中...";
+ let r = await res.json();
+
+ if(r.status==="LOGIN_OK"){
+   document.getElementById("msg").innerHTML=
+     "ログイン成功🎉<br>あなたのポイント：" + r.point;
+ }else{
+   document.getElementById("msg").innerText="ログイン失敗";
+ }
+}
+</script>
+</body>
+</html>
