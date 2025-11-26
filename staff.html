@@ -10,7 +10,7 @@ h2{color:#0099ff;}
 button{padding:12px;margin-top:15px;width:100%;background:#0099ff;color:white;border:none;border-radius:8px;font-weight:bold;cursor:pointer;}
 button:hover{background:#007acc;}
 input{width:100%;padding:12px;margin-top:8px;border-radius:8px;border:1px solid #ccc;font-size:16px;box-sizing:border-box;}
-#result{margin-top:15px;font-weight:bold;}
+#res_msg,#result{margin-top:15px;font-weight:bold;}
 </style>
 </head>
 <body>
@@ -19,36 +19,42 @@ input{width:100%;padding:12px;margin-top:8px;border-radius:8px;border:1px solid 
 <input id="staff_id" placeholder="スタッフID">
 <input id="staff_pass" type="password" placeholder="パスワード">
 <button onclick="staffLogin()">ログイン</button>
-<p id="result"></p>
+<p id="res_msg"></p>
+
 <div id="scanBox" style="display:none;">
-<h2>📲 QR/バーコードスキャン</h2>
-<input id="uid_input" placeholder="スキャンUID">
+<h2>📲 バーコード/UID入力</h2>
+<input id="uid_input" placeholder="顧客UID">
 <input id="point_input" type="number" placeholder="付与ポイント">
 <button onclick="addPoints()">ポイント加算</button>
-<p id="res_msg"></p>
+<p id="result"></p>
 </div>
 </div>
 
 <script>
-const API="https://script.google.com/macros/s/AKfycby3s4ajbk3PTfrrhP-klJ3ERAdSiIIiXOXjFoOr4YO8DzP0Veq1mghE4BgGfA1lwlT4/exec";
+const API="https://script.google.com/macros/s/YOUR_SCRIPT_ID/exec";
 
 async function staffLogin(){
-  let data={staffId:document.getElementById("staff_id").value,pass:document.getElementById("staff_pass").value,loginStaff:true};
-  let r = await fetch(API,{method:"POST",body:JSON.stringify(data)}).then(r=>r.json());
+  const staffId = document.getElementById("staff_id").value.trim();
+  const pass = document.getElementById("staff_pass").value.trim();
+  if(!staffId || !pass){document.getElementById("res_msg").innerText="IDとパスワードを入力"; return;}
+  
+  let data={staffId:staffId,pass:pass,loginStaff:true};
+  let r = await fetch(API,{method:"POST",body:JSON.stringify(data)}).then(res=>res.json());
   if(r.status==="LOGIN_OK"){
-    document.getElementById("result").innerText="ログイン成功";
+    document.getElementById("res_msg").innerText="ログイン成功";
     document.getElementById("scanBox").style.display="block";
-  }else document.getElementById("result").innerText="ログイン失敗";
+  }else document.getElementById("res_msg").innerText="ログイン失敗";
 }
 
 async function addPoints(){
-  const uid=document.getElementById("uid_input").value.trim();
-  const amount=parseInt(document.getElementById("point_input").value);
-  if(!uid || !amount){document.getElementById("res_msg").innerText="UIDとポイントを入力"; return;}
+  const uid = document.getElementById("uid_input").value.trim();
+  const amount = parseInt(document.getElementById("point_input").value);
+  if(!uid || !amount){document.getElementById("result").innerText="UIDとポイントを入力"; return;}
+  
   try{
     const r = await fetch(API+`?f=addPoint&uid=${uid}&v=${amount}`).then(res=>res.json());
-    document.getElementById("res_msg").innerText=`ポイント加算完了！新残高: ${r.now}`;
-  }catch(e){document.getElementById("res_msg").innerText="通信エラー"; console.error(e);}
+    document.getElementById("result").innerText=`ポイント加算完了！新残高: ${r.now}`;
+  }catch(e){document.getElementById("result").innerText="通信エラー"; console.error(e);}
 }
 </script>
 </body>
