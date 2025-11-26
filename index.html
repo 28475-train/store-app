@@ -2,82 +2,27 @@
 <html lang="ja">
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>店舗アプリ</title>
+<title>店舗アプリ（QR付与対応）</title>
 <style>
-body{
-  font-family: 'Helvetica', sans-serif;
-  margin:0;
-  background:#e6f2ff;
-  color:#333;
-}
-.container{
-  max-width:500px;
-  margin:auto;
-  padding:15px;
-}
+body{font-family:'Helvetica',sans-serif;margin:0;background:#e6f2ff;color:#333;}
+.container{max-width:500px;margin:auto;padding:15px;}
 .screen{display:none;}
 .active{display:block;}
-input,button{
-  width:100%;
-  padding:12px;
-  margin-top:8px;
-  font-size:16px;
-  border-radius:8px;
-  border:1px solid #ccc;
-  box-sizing:border-box;
-}
-button{
-  background:#0099ff;
-  color:white;
-  font-weight:bold;
-  border:none;
-  cursor:pointer;
-  transition:0.2s;
-}
-button:hover{
-  background:#007acc;
-}
+input,button{width:100%;padding:12px;margin-top:8px;font-size:16px;border-radius:8px;border:1px solid #ccc;box-sizing:border-box;}
+button{background:#0099ff;color:white;font-weight:bold;border:none;cursor:pointer;transition:0.2s;}
+button:hover{background:#007acc;}
 h2{text-align:center;margin-top:0;}
-nav{
-  position:fixed;
-  bottom:0;
-  left:0;
-  width:100%;
-  background:#fff;
-  display:flex;
-  border-top:1px solid #ccc;
-}
-nav button{
-  flex:1;
-  border:none;
-  border-radius:0;
-  margin:0;
-  padding:15px;
-  background:#e6f2ff;
-}
-nav button.active{
-  background:#0099ff;
-  color:white;
-  font-weight:bold;
-}
-.box{
-  background:white;
-  padding:15px;
-  border-radius:12px;
-  box-shadow:0 4px 8px rgba(0,0,0,0.1);
-  margin-top:15px;
-}
-.logo{
-  display:block;
-  margin:auto;
-  width:120px;
-}
+nav{position:fixed;bottom:0;left:0;width:100%;background:#fff;display:flex;border-top:1px solid #ccc;}
+nav button{flex:1;border:none;border-radius:0;margin:0;padding:15px;background:#e6f2ff;}
+nav button.active{background:#0099ff;color:white;font-weight:bold;}
+.box{background:white;padding:15px;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1);margin-top:15px;text-align:center;}
+.logo{display:block;margin:auto;width:120px;}
+#qr_box img{width:200px;height:200px;margin-top:10px;}
 </style>
 </head>
 <body>
 
 <div class="container">
-
 <img src="https://dummyimage.com/120x60/0099ff/ffffff&text=LOGO" class="logo" alt="店舗ロゴ">
 
 <!-- ログイン画面 -->
@@ -102,38 +47,21 @@ nav button.active{
 <div class="box">
 <p id="home_name"></p>
 <p id="home_point"></p>
-<button onclick="go('pointAdd')">➕ポイント付与</button>
-<button onclick="go('pointUse')">💳ポイント使用</button>
+<button onclick="go('qr')">📱 自分のQR表示</button>
 <button onclick="go('reserve')">📅予約登録</button>
-<button onclick="go('qr')">📱会員QR表示</button>
 <button onclick="logout()">🚪ログアウト</button>
 </div>
 </div>
 
-<!-- ポイント加算 -->
-<div id="pointAdd" class="screen">
-<h2>➕ポイント加算</h2>
-<div class="box">
-<input id="add_amount" type="number" placeholder="付与ポイント">
-<button onclick="addPoint()">付与する</button>
-</div>
-</div>
-
-<!-- ポイント使用 -->
-<div id="pointUse" class="screen">
-<h2>💳ポイント使用</h2>
-<div class="box">
-<input id="use_amount" type="number" placeholder="使用ポイント">
-<button onclick="usePoint()">使用する</button>
-</div>
-</div>
-
-<!-- QR表示 -->
+<!-- QR表示 & ポイント付与 -->
 <div id="qr" class="screen">
 <h2>📱 会員QRコード</h2>
-<div class="box" style="text-align:center;">
+<div class="box">
+<p id="user_name"></p>
+<p id="user_point"></p>
 <div id="qr_box"></div>
-<p>ID：<span id="qr_uid"></span></p>
+<p>※このQRを店側端末で読み取るとポイントが自動加算されます。</p>
+<button onclick="go('home')">🏠 ホームに戻る</button>
 </div>
 </div>
 
@@ -178,36 +106,38 @@ async function login(){
  let r=await fetch(API,{method:"POST",body:JSON.stringify(data)}).then(r=>r.json());
  if(r.status==="LOGIN_OK"){
   uid=r.userId;name=r.name;point=r.point;
-  showHome();go('home');
+  localStorage.setItem("uid", uid);
+  localStorage.setItem("name", name);
+  localStorage.setItem("point", point);
+  showQR(); go('home');
  }else msg("ログイン失敗");
 }
 
-function showHome(){
- id("home_name").innerText="会員："+name;
- id("home_point").innerText="保有ポイント："+point;
+function showQR(){
+ if(!uid){ id("msg").innerText="ログインしてください"; return;}
+ id("user_name").innerText="会員："+name;
+ id("user_point").innerText="保有ポイント："+point;
  id("qr_uid").innerText=uid;
- id("qr_box").innerHTML=`<img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${uid}">`;
+ id("qr_box").innerHTML=`<img src="https://chart.googleapis.com/chart?chs=200x200&cht=qr&chl=${uid}" alt="QRコード">`;
 }
 
-async function addPoint(){
- let r=await fetch(API+`?f=addPoint&uid=${uid}&v=${val("add_amount")}`).then(r=>r.json());
- point=r.now; showHome(); msg("ポイント付与完了✨");
+async function addPoint(uidAdd, amount){
+ // 店側端末で読み取ったQRを元にポイント加算
+ let r = await fetch(API+`?f=addPoint&uid=${uidAdd}&v=${amount}`).then(r=>r.json());
+ return r.now;
 }
 
-async function usePoint(){
- let r=await fetch(API+`?f=usePoint&uid=${uid}&v=${val("use_amount")}`).then(r=>r.json());
- if(r.status==="NOT_ENOUGH"){msg("ポイント不足"); return;}
- point=r.now; showHome(); msg("利用完了💳");
+function reserve(){ msg("予約登録完了📅（スプレッドシート保存済み）"); }
+
+function logout(){ 
+  localStorage.clear();
+  location.reload(); 
 }
 
-function reserve(){
- msg("予約登録完了📅（スプレッドシート保存済み）");
-}
-
-function logout(){ location.reload(); }
 const id=i=>document.getElementById(i);
 const val=i=>id(i).value;
 const msg=t=>id("msg").innerText=t;
+
 </script>
 </body>
 </html>
